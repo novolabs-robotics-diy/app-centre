@@ -1,0 +1,11 @@
+[
+  {
+    "id": "test_app",
+    "name": "Test App",
+    "author": "Covrigel",
+    "description": "This is the full description of Test App",
+    "entry": "test.lua",
+    "version": "0.1",
+    "url": "https://raw.githubusercontent.com/novolabs-robotics/app-centre/main/apps/test_app/"
+  }
+]

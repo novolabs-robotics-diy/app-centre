@@ -1,0 +1,11 @@
+[
+  {
+    "id": "music_player",
+    "name": "Music Player",
+    "author": "novolabs",
+    "description": "Listen to music from the SD card. Supports MP3 files. Use cnvmp3.com using the 320kbps bitrate for the best sound.",
+    "entry": "music.lua",
+    "version": "1.0",
+    "url": "https://raw.githubusercontent.com/novolabs-robotics/app-centre/main/apps/music_player/"
+  }
+]
