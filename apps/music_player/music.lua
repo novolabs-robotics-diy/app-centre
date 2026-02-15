@@ -141,3 +141,35 @@ local function updatePlayTime()
 end
 
 lv_timer_create(updatePlayTime, 1000, nil)
+
+-- Called from C when song changes
+function on_song_change(coverPath)
+    print("Song changed:", coverPath)
+
+    g_cover_drawn = false
+
+    -- Update song title
+    local currentSong = audio_get_current()
+    if currentSong then
+        lv_label_set_text(songLabel, currentSong)
+    end
+
+    -- Update cover image
+    if coverPath and coverPath ~= "" then
+        if not string.find(coverPath, "^/") then
+            coverPath = "/" .. coverPath
+        end
+
+        local success = canvas_load_image(coverCanvas, coverPath)
+        if success then
+            g_cover_drawn = true
+        else
+            print("Failed to load cover")
+        end
+    else
+        -- clear canvas if no cover
+        lv_canvas_fill_bg(coverCanvas, lv_color_hex(0x000000), LV_OPA_COVER)
+    end
+
+    lv_obj_invalidate(coverCanvas)
+end
