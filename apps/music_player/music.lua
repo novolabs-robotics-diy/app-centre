@@ -10,11 +10,11 @@ audio_build_playlist("/music")
 audio_set_volume(0)
 
 -- Cover Image
-local coverCanvas = lv_canvas_create(scr)
-lv_obj_set_size(coverCanvas, 135, 135)  -- or LV_SIZE_CONTENT if you prefer
-lv_obj_set_align(coverCanvas, LV_ALIGN_BOTTOM_MID)
-lv_obj_set_pos(coverCanvas, 0, -135)
-lv_obj_clear_flag(coverCanvas, LV_OBJ_FLAG_SCROLLABLE)
+local coverImg = lv_img_create(scr)
+lv_obj_set_size(coverImg, 135, 135)
+lv_obj_set_align(coverImg, LV_ALIGN_BOTTOM_MID)
+lv_obj_set_pos(coverImg, 0, -135)
+lv_obj_clear_flag(coverImg, LV_OBJ_FLAG_SCROLLABLE)
 
 -- Song Label
 local songLabel = lv_label_create(scr)
@@ -76,12 +76,10 @@ createBtnLabel(fowardBtn, "Foward")
 -- Button events
 lv_obj_add_event_cb(playBtn, function()
     if not audio_is_playing() then
-        audio_play(audio_get_playlist()[1]) -- play first song if nothing playing
+        audio_play()
     else
-        audio_resume()
+        audio_pause()   -- your pauseResume() handles toggle
     end
-    canvas_reset()
-    updateUI()
 end, LV_EVENT_CLICKED)
 
 lv_obj_add_event_cb(pauseBtn, function()
@@ -108,22 +106,6 @@ function updateUI()
     if currentSong then
         lv_label_set_text(songLabel, currentSong)
     end
-
-    -- Load cover image once per play
-    local coverPath = audio_get_cover()
-    if coverPath and not g_cover_drawn then
-        if not string.find(coverPath, "^/") then
-            coverPath = "/" .. coverPath
-        end
-        print("Loading cover:", coverPath)
-        local success = canvas_load_image(coverCanvas, coverPath)
-        if success then
-            print("Cover drawn successfully!")
-            g_cover_drawn = true
-        else
-            print("Failed to draw cover")
-        end
-    end
 end
 
 local function formatTime(ms)
@@ -147,8 +129,6 @@ lv_timer_create(updatePlayTime, 1000, nil)
 function on_song_change(coverPath)
     print("Song changed:", coverPath)
 
-    g_cover_drawn = false
-
     -- Update song title
     local currentSong = audio_get_current()
     if currentSong then
@@ -161,16 +141,11 @@ function on_song_change(coverPath)
             coverPath = "/" .. coverPath
         end
 
-        local success = canvas_load_image(coverCanvas, coverPath)
-        if success then
-            g_cover_drawn = true
-        else
-            print("Failed to load cover")
-        end
+        print("Setting image source:", coverPath)
+        lv_img_set_src(coverImg, coverPath)
     else
-        -- clear canvas if no cover
-        lv_canvas_fill_bg(coverCanvas, lv_color_hex(0x000000), LV_OPA_COVER)
+        -- optional: clear image
+        lv_img_set_src(coverImg, nil)
     end
-
-    lv_obj_invalidate(coverCanvas)
 end
+
