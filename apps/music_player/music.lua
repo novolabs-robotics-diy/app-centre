@@ -6,7 +6,8 @@ local scr = lv_scr_act()
 -- Start audio system and build playlist
 audio_start()
 audio_build_playlist("/music")
-audio_set_volume(21)
+-- audio_set_volume(21)
+audio_set_volume(0)
 
 -- Cover Image
 local coverCanvas = lv_canvas_create(scr)
