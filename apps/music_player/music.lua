@@ -6,25 +6,27 @@ local scr = lv_scr_act()
 -- Start audio system and build playlist
 audio_start()
 audio_build_playlist("/music")
+-- audio_set_volume(21)
 audio_set_volume(0)
 
 -- Cover Image
-local coverImage = lv_img_create(scr)
-lv_obj_set_size(coverImage, 120, 120)
-lv_obj_set_align(coverImage, LV_ALIGN_BOTTOM_MID)
-lv_obj_set_pos(coverImage, 0, -135)
+local coverCanvas = lv_canvas_create(scr)
+lv_obj_set_size(coverCanvas, 135, 135)  -- or LV_SIZE_CONTENT if you prefer
+lv_obj_set_align(coverCanvas, LV_ALIGN_BOTTOM_MID)
+lv_obj_set_pos(coverCanvas, 0, -135)
+lv_obj_clear_flag(coverCanvas, LV_OBJ_FLAG_SCROLLABLE)
 
 -- Song Label
 local songLabel = lv_label_create(scr)
 lv_obj_set_size(songLabel, 290, 21)
-lv_label_set_text(songLabel, "Song label")
+lv_label_set_text(songLabel, "No song playing")
 lv_obj_set_align(songLabel, LV_ALIGN_BOTTOM_MID)
 lv_obj_set_text_font(songLabel, "font_montserrat_18")
 lv_obj_set_pos(songLabel, 0, -120)
 
 -- Song playtime
 local songPlayTime = lv_label_create(scr)
-lv_label_set_text(songPlayTime, "00:00")
+lv_label_set_text(songPlayTime, "00:00 / 00:00")
 lv_obj_set_style_text_color(songPlayTime, lv_color_hex(0x808080), LV_PART_MAIN)
 lv_obj_set_align(songPlayTime, LV_ALIGN_BOTTOM_LEFT)
 lv_obj_set_pos(songPlayTime, 15, -100)
@@ -78,6 +80,8 @@ lv_obj_add_event_cb(playBtn, function()
     else
         audio_resume()
     end
+    canvas_reset()
+    updateUI()
 end, LV_EVENT_CLICKED)
 
 lv_obj_add_event_cb(pauseBtn, function()
@@ -93,20 +97,34 @@ lv_obj_add_event_cb(backwardBtn, function()
 end, LV_EVENT_CLICKED)
 
 -- Update function (song label, time, cover)
-local function updateUI()
+function canvas_reset()
+    g_cover_drawn = false  -- global Lua variable for tracking
+end
+
+-- Update UI function, called on song change or play
+function updateUI()
+    -- Update song label
     local currentSong = audio_get_current()
     if currentSong then
         lv_label_set_text(songLabel, currentSong)
     end
 
+    -- Load cover image once per play
     local coverPath = audio_get_cover()
-    if coverPath then
-        lv_img_set_src(coverImage, coverPath)
+    if coverPath and not g_cover_drawn then
+        if not string.find(coverPath, "^/") then
+            coverPath = "/" .. coverPath
+        end
+        print("Loading cover:", coverPath)
+        local success = canvas_load_image(coverCanvas, coverPath)
+        if success then
+            print("Cover drawn successfully!")
+            g_cover_drawn = true
+        else
+            print("Failed to draw cover")
+        end
     end
 end
-
--- Create LVGL timer to call updateUI every 1 second
-lv_timer_create(updateUI, 1000, nil)
 
 local function formatTime(ms)
     local sec = ms // 1000       -- integer division
