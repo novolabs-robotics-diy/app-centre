@@ -56,7 +56,7 @@ function on_init()
     lv_obj_set_style_bg_color(btn, 0x2979FF, LV_PART_MAIN)
 
     local btn_lbl = lv_label_create(btn)
-    lv_label_set_text(btn_lbl, LV_SYM_WIFI .. "  Check WiFi")
+    lv_label_set_text(btn_lbl, "Check WiFi")
     lv_obj_center(btn_lbl)
 
     lv_obj_add_event_cb(btn, function(obj, code)
