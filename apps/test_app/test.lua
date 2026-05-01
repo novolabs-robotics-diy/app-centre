@@ -13,7 +13,7 @@ function on_init()
     lv_obj_set_style_radius(container, 0)
     lv_obj_set_style_pad_left(container, 15, LV_PART_MAIN)
     lv_obj_set_style_pad_right(container, 15, LV_PART_MAIN)
-    lv_obj_set_style_pad_top(container, 30, LV_PART_MAIN)
+    lv_obj_set_style_pad_top(container, 40, LV_PART_MAIN)
     lv_obj_set_style_pad_bottom(container, 0, LV_PART_MAIN)
     lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN)
     lv_obj_set_style_pad_row(container, 14, LV_PART_MAIN)
@@ -51,7 +51,7 @@ function on_init()
 
     -- Button with event
     btn = lv_btn_create(container)
-    lv_obj_set_width(btn, 200)
+    lv_obj_set_size(container, 200, 40)
     lv_obj_set_style_radius(btn, 10, LV_PART_MAIN)
     lv_obj_set_style_bg_color(btn, 0x2979FF, LV_PART_MAIN)
 
