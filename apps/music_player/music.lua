@@ -26,7 +26,7 @@ function on_init()
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "No song playing")
     lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 0, -100)
-    lv_obj_set_style_text_font(ui_songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
+    lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
 
     -- Playtime
     ui.songPlayTime = lv_label_create(ui.container)
