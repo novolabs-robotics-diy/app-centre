@@ -84,9 +84,9 @@ local function updateCover()
         local cover = normalize(audio_get_cover())
 
         if cover then
-            print("[music] updating cover:", cover)
+            os_log("[music] updating cover: " .. cover)
 
-            -- 💣 force refresh (safe for your LVGL bindings)
+            -- force refresh (safe for your LVGL bindings)
             if ui.img then
                 lv_obj_del(ui.img)
             end
