@@ -98,7 +98,7 @@ local function updateCover()
 
             state.currentCover = cover
         else
-            print("[music] no cover returned")
+            os_log("[music] no cover returned")
         end
     end
 end
