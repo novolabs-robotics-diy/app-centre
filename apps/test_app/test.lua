@@ -22,7 +22,7 @@ function on_init()
     -- Title
     label = lv_label_create(container)
     lv_label_set_text(label, "Hello NovoLabs!")
-    lv_obj_set_style_text_font(label, FONT_BIGGER, LV.PART_MAIN)
+    lv_obj_set_style_text_font(label, LV.FONT_BIGGER, LV.PART_MAIN)
     lv_obj_set_style_text_color(label, 0xFFFFFF, LV.PART_MAIN)
 
     -- Battery & time
@@ -31,7 +31,7 @@ function on_init()
     lv_label_set_text(info, string.format(
         "%s  Bat. Level %d%%", t.iso, battery_percent()))
     lv_obj_set_style_text_color(info, 0x909090, LV.PART_MAIN)
-    lv_obj_set_sytle_text_font(info, FONT_TINY, LV.PART_MAIN)
+    lv_obj_set_sytle_text_font(info, LV.FONT_TINY, LV.PART_MAIN)
 
     -- IMU readout
     local imu_label = lv_label_create(container)
@@ -52,8 +52,8 @@ function on_init()
     lv_obj_set_style_bg_color(btn, 0x2979FF, LV.PART_MAIN)
 
     local btn_lbl = lv_label_create(btn)
-    lv_label_set_text(btn_lbl, "Check WiFi")
-    lv_obj_set_sytle_text_font(btn_lbl, FONT_NORMAL, LV.PART_MAIN)
+    lv_label_set_text(btn_lbl, LV.SYM_WIFI "  Check WiFi")
+    lv_obj_set_sytle_text_font(btn_lbl, LV.FONT_NORMAL, LV.PART_MAIN)
     lv_obj_set_align(btn_lbl, LV.ALIGN_CENTER, 0, 0)
 
     lv_obj_add_event_cb(btn, function(obj, code)
