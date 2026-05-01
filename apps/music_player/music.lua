@@ -19,7 +19,7 @@ function on_init()
 
     -- Cover Image
     ui.img = lv_img_create(ui.container)
-    lv_img_set_src_sd(ui.img, "/apps/test_app/icon.png")
+    -- lv_img_set_src_sd(ui.img, "/apps/test_app/icon.png")
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
 
     -- Song Label
