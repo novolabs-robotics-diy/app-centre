@@ -51,7 +51,7 @@ function on_init()
 
     -- Button with event
     btn = lv_btn_create(container)
-    lv_obj_set_size(container, 200, 40)
+    lv_obj_set_size(btn, 200, 40)
     lv_obj_set_style_radius(btn, 10, LV_PART_MAIN)
     lv_obj_set_style_bg_color(btn, 0x2979FF, LV_PART_MAIN)
 
@@ -69,7 +69,7 @@ function on_init()
     -- SD image example
     local img = lv_img_create(container)
     lv_img_set_src_sd(img, "/apps/test_app/icon.png")
-    lv_obj_set_size(img, 60, 60)
+    lv_obj_set_size(img, LV_SIZE_CONTENT, LV_SIZE_CONTENT)
 
     return true  -- on_init must return true to continue
 end
