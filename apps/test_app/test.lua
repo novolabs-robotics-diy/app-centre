@@ -22,7 +22,7 @@ function on_init()
     -- Title
     label = lv_label_create(container)
     lv_label_set_text(label, "Hello NovoLabs!")
-    lv_obj_set_text_font(label, font_montserrat_22, LV_PART_MAIN)
+    lv_obj_set_text_font(label, "font_montserrat_22", LV_PART_MAIN)
     lv_obj_set_style_text_color(label, 0xFFFFFF, LV_PART_MAIN)
 
     -- Battery & time
@@ -31,7 +31,7 @@ function on_init()
     lv_label_set_text(info, string.format(
         "%s  Bat. Level %d%%", t.iso, battery_percent()))
     lv_obj_set_style_text_color(info, 0x909090, LV_PART_MAIN)
-    lv_obj_set_text_font(info, font_montserrat_14, LV_PART_MAIN)
+    lv_obj_set_text_font(info, "font_montserrat_14", LV_PART_MAIN)
 
     -- IMU readout
     local imu_label = lv_label_create(container)
