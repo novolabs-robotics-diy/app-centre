@@ -6,6 +6,10 @@
     "description": "This is the full description of Test App",
     "entry": "test.lua",
     "version": "0.1.0",
+    "min_os_version": "1.0.0",
+    "category": "tools",
+    "icon": "icon.png",
+    "screenshots": ["screen1.png", "screen2.png"],
     "url": "https://raw.githubusercontent.com/novolabs-robotics-diy/app-centre/main/apps/test_app/"
   }
 ]
