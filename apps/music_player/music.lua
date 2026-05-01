@@ -119,7 +119,7 @@ function on_init()
     -- COVER IMAGE
     ui.img = lv_img_create(ui.container)
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
-    lv_img_set_src_sd(img, "/music/covers/default.png")
+    lv_img_set_src_sd(ui.img, "/music/covers/default.png")
     lv_obj_set_size(ui.img, LV.SIZE_CONTENT, LV.SIZE_CONTENT)
 
     -- SONG LABEL
