@@ -11,11 +11,11 @@ function on_init()
     lv_obj_set_style_bg_color(container, 0x0D0D0D, LV.PART_MAIN)
     lv_obj_set_style_bg_opa(container, 255, LV.PART_MAIN)
     lv_obj_set_style_border_width(container, 0, LV.PART_MAIN)
-    lv_obj_set_style_radius(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_left(container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_right(container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(container, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(container, 0, LV.PART_MAIN)
+    lv_obj_set_style_pad_left(container, 15, LV.PART_MAIN)
+    lv_obj_set_style_pad_right(container, 15, LV.PART_MAIN)
+    lv_obj_set_style_pad_top(container, 30, LV.PART_MAIN)
+    lv_obj_set_style_pad_bottom(container, 0, LV.PART_MAIN)
     lv_obj_set_flex_flow(container, LV.FLEX_FLOW_COLUMN)
     lv_obj_set_style_pad_row(container, 14, LV.PART_MAIN)
     lv_obj_clear_flag(container, LV.FLAG_SCROLLABLE)
