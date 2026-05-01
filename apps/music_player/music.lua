@@ -25,13 +25,13 @@ function on_init()
     -- Song Label
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "No song playing")
-    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_MID, 0, -120)
+    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_MID, 0, -100)
 
     -- Playtime
     ui.songPlayTime = lv_label_create(ui.container)
     lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
     lv_obj_set_style_text_color(ui.songPlayTime, 0x808080, LV.PART_MAIN)
-    lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -100)
+    lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -80)
 
     -- Panel
     ui.panel = lv_obj_create(ui.container)
