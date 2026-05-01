@@ -15,7 +15,7 @@ function on_init()
     lv_obj_set_style_pad_right(container, 15, LV.PART_MAIN)
     lv_obj_set_style_pad_top(container, 40, LV.PART_MAIN)
     lv_obj_set_style_pad_bottom(container, 0, LV.PART_MAIN)
-    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN)
+    lv_obj_set_flex_flow(container, LV.FLEX_FLOW_COLUMN)
     lv_obj_set_style_pad_row(container, 14, LV.PART_MAIN)
     lv_obj_clear_flag(container, LV.FLAG_SCROLLABLE)
 
