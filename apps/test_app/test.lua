@@ -61,7 +61,7 @@ function on_init()
             ("Connected to " .. wifi_ssid() .. "  " .. wifi_ip()) or
             "Not connected"
         lv_label_set_text(label, status)
-    end, LV.EVENT_CLICKED)
+    end, LV_EVENT_CLICKED)
 
     -- SD image example
     local img = lv_img_create(container)
