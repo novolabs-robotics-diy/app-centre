@@ -1,11 +1,9 @@
--- music.lua
--- Full music helper module for NovoLabs OS
+-- Music App (NovoLabs OS compatible)
 
-local M = {}
+local screen = lv_scr_act()
 
--- ================= STATE =================
-M.ui = {}
-M.state = {
+ui = {}
+state = {
     currentSong = nil,
     currentCover = nil
 }
@@ -27,7 +25,7 @@ local function formatTime(ms)
 end
 
 -- ================= AUDIO CONTROL =================
-function M.play()
+local function play()
     if audio_is_playing() then return end
 
     local pos = audio_get_position()
@@ -42,92 +40,100 @@ function M.play()
     end
 end
 
-function M.pause()
+local function pause()
     audio_pause()
 end
 
-function M.next()
+local function next()
     audio_next()
-    M.state.currentSong = nil -- force refresh
+    state.currentSong = nil -- force UI refresh
 end
 
-function M.prev()
+local function prev()
     audio_prev()
-    M.state.currentSong = nil
+    state.currentSong = nil
 end
 
--- ================= COVER =================
-function M.updateCover()
-    local song = audio_get_current()
-    if not song then return end
-
-    if song ~= M.state.currentSong then
-        M.state.currentSong = song
-
-        local cover = normalize(audio_get_cover())
-
-        if cover then
-            print("[music] cover:", cover)
-
-            -- safest method (works on your LVGL binding)
-            lv_obj_del(M.ui.img)
-
-            M.ui.img = lv_img_create(M.ui.container)
-            lv_obj_align(M.ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
-
-            lv_img_set_src_sd(M.ui.img, cover)
-
-            M.state.currentCover = cover
-        end
-    end
-end
-
--- ================= UI =================
-function M.updateSong()
+-- ================= UI UPDATE =================
+local function updateSong()
     local song = audio_get_current()
     if song then
-        lv_label_set_text(M.ui.songLabel, song)
+        lv_label_set_text(ui.songLabel, song)
     end
 end
 
-function M.updateTime()
+local function updateTime()
     if audio_is_playing() then
         local pos = audio_get_position()
         local dur = audio_get_duration()
 
         if pos and dur then
-            lv_label_set_text(M.ui.songPlayTime,
+            lv_label_set_text(ui.songPlayTime,
                 formatTime(pos) .. " / " .. formatTime(dur))
         end
     end
 end
 
+local function updateCover()
+    local song = audio_get_current()
+    if not song then return end
+
+    if song ~= state.currentSong then
+        state.currentSong = song
+
+        local cover = normalize(audio_get_cover())
+
+        if cover then
+            print("[music] updating cover:", cover)
+
+            -- 💣 force refresh (safe for your LVGL bindings)
+            if ui.img then
+                lv_obj_del(ui.img)
+            end
+
+            ui.img = lv_img_create(ui.container)
+            lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
+
+            lv_img_set_src_sd(ui.img, cover)
+
+            state.currentCover = cover
+        else
+            print("[music] no cover returned")
+        end
+    end
+end
+
 -- ================= INIT =================
-function M.init(container)
-    M.ui.container = container
+function on_init()
+    -- ROOT CONTAINER
+    ui.container = lv_obj_create(screen)
+    lv_obj_set_size(ui.container, 320, 480)
+    lv_obj_set_style_bg_color(ui.container, 0x000000, LV.PART_MAIN)
+    lv_obj_set_style_border_width(ui.container, 0, LV.PART_MAIN)
 
     -- AUDIO INIT
     audio_start()
     audio_build_playlist("/music")
     audio_set_volume(21)
 
-    -- IMAGE
-    M.ui.img = lv_img_create(container)
-    lv_obj_align(M.ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
+    -- COVER IMAGE
+    ui.img = lv_img_create(ui.container)
+    lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
 
     -- SONG LABEL
-    M.ui.songLabel = lv_label_create(container)
-    lv_label_set_text(M.ui.songLabel, "No song playing")
-    lv_obj_align(M.ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 15, -100)
+    ui.songLabel = lv_label_create(ui.container)
+    lv_label_set_text(ui.songLabel, "No song playing")
+    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_MID, 0, -100)
+    lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
 
     -- TIME LABEL
-    M.ui.songPlayTime = lv_label_create(container)
-    lv_label_set_text(M.ui.songPlayTime, "00:00 / 00:00")
-    lv_obj_set_style_text_color(M.ui.songPlayTime, 0x808080, LV.PART_MAIN)
-    lv_obj_align(M.ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -80)
+    ui.songPlayTime = lv_label_create(ui.container)
+    lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
+    lv_obj_set_style_text_color(ui.songPlayTime, 0x808080, LV.PART_MAIN)
+    lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -80)
 
     -- PANEL
-    local panel = lv_obj_create(container)
+    local panel = lv_obj_create(ui.container)
     lv_obj_set_size(panel, 290, 60)
     lv_obj_align(panel, LV.ALIGN_BOTTOM_MID, 0, -15)
     lv_obj_set_style_bg_color(panel, 0x101010, LV.PART_MAIN)
@@ -151,22 +157,27 @@ function M.init(container)
     end
 
     local back = createBtn("<<")
-    local play = createBtn(">")
-    local pause = createBtn("||")
-    local next = createBtn(">>")
+    local playBtn = createBtn(">")
+    local pauseBtn = createBtn("||")
+    local nextBtn = createBtn(">>")
 
     -- EVENTS
-    lv_obj_add_event_cb(play, function() M.play() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(pause, function() M.pause() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(next, function() M.next() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(back, function() M.prev() end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(playBtn, function() play() end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(pauseBtn, function() pause() end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(nextBtn, function() next() end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(back, function() prev() end, LV_EVENT_CLICKED)
+
+    return true
 end
 
 -- ================= TICK =================
-function M.tick()
-    M.updateSong()
-    M.updateTime()
-    M.updateCover()
+function on_tick()
+    updateSong()
+    updateTime()
+    updateCover()
 end
 
-return M
+-- ================= DESTROY =================
+function on_destroy()
+    os_log("Music app closed")
+end
