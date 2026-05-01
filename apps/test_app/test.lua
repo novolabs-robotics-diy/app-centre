@@ -54,7 +54,7 @@ function on_init()
     local btn_lbl = lv_label_create(btn)
     lv_label_set_text(btn_lbl, "Check WiFi")
     lv_obj_set_text_font(btn_lbl, "font_montserrat_18", LV_PART_MAIN)
-    lv_obj_center(btn_lbl)
+    lv_obj_set_align(btn_lbl, LV_ALIGN_CENTER, 0, 0)
 
     lv_obj_add_event_cb(btn, function(obj, code)
         local status = wifi_connected() and
