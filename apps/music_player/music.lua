@@ -25,7 +25,8 @@ function on_init()
     -- Song Label
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "No song playing")
-    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_MID, 0, -100)
+    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 0, -100)
+    lv_obj_set_style_text_font(ui_songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
 
     -- Playtime
     ui.songPlayTime = lv_label_create(ui.container)
@@ -45,13 +46,13 @@ function on_init()
     lv_obj_set_style_radius(ui.panel, 100, LV.PART_MAIN)
 
     -- Helper
-    local function createBtn(txt)
-        local btn = lv_btn_create(ui.panel)
+    function createBtn(txt)
+        btn = lv_btn_create(ui.panel)
         lv_obj_set_size(btn, 50, 50)
         lv_obj_set_style_bg_color(btn, 0x202020, LV_PART_MAIN)
         lv_obj_set_style_radius(btn, 100, LV_PART_MAIN)
 
-        local lbl = lv_label_create(btn)
+        lbl = lv_label_create(btn)
         lv_label_set_text(lbl, txt)
         lv_obj_center(lbl)
 
@@ -67,7 +68,7 @@ function on_init()
     -- Events
     lv_obj_add_event_cb(ui.playBtn, function()
         if not audio_is_playing() then
-            local list = audio_get_playlist()
+            list = audio_get_playlist()
             if list and list[1] then
                 audio_play(list[1])
             end
@@ -107,13 +108,13 @@ end
 
 function updateUI()
     -- Update song title
-    local currentSong = audio_get_current()
+    currentSong = audio_get_current()
     if currentSong then
         lv_label_set_text(ui.songLabel, currentSong)
     end
 
     -- Update cover image
-    local coverPath = audio_get_cover()
+    coverPath = audio_get_cover()
 
     if coverPath then
         -- normalize path
@@ -124,8 +125,8 @@ function updateUI()
         -- only update if changed
         if ui.currentCover ~= coverPath then
             print("Updating cover:", coverPath)
-
-            local ok = lv_img_set_src_sd(ui.img, coverPath)
+            lv_img_set_src(ui.img, nil)          -- clear first
+            lv_img_set_src_sd(ui.img, coverPath) -- then set new
 
             if ok ~= false then
                 ui.currentCover = coverPath
@@ -136,9 +137,9 @@ function updateUI()
     end
 end
 
-local function formatTime(ms)
-    local sec = ms // 1000
-    local min = sec // 60
+function formatTime(ms)
+    sec = ms // 1000
+    min = sec // 60
     sec = sec % 60
     return string.format("%d:%02d", min, sec)
 end
@@ -146,8 +147,8 @@ end
 function on_tick()
     -- update playtime
     if audio_is_playing() then
-        local pos = audio_get_position()
-        local dur = audio_get_duration()
+        pos = audio_get_position()
+        dur = audio_get_duration()
         if pos and dur then
             lv_label_set_text(ui.songPlayTime,
                 formatTime(pos) .. " / " .. formatTime(dur))
@@ -155,7 +156,7 @@ function on_tick()
     end
 
     -- detect song change
-    local current = audio_get_current()
+    current = audio_get_current()
     if current ~= ui.lastSong then
         ui.lastSong = current
         updateUI()
