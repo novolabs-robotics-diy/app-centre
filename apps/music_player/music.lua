@@ -106,18 +106,33 @@ function canvas_reset()
 end
 
 function updateUI()
+    -- Update song title
     local currentSong = audio_get_current()
     if currentSong then
         lv_label_set_text(ui.songLabel, currentSong)
     end
 
+    -- Update cover image
     local coverPath = audio_get_cover()
-    if coverPath and not g_cover_drawn then
+
+    if coverPath then
+        -- normalize path
         if not string.find(coverPath, "^/") then
             coverPath = "/" .. coverPath
         end
-        g_cover_drawn = true
-        -- (you can re-add canvas drawing if needed)
+
+        -- only update if changed
+        if ui.currentCover ~= coverPath then
+            print("Updating cover:", coverPath)
+
+            local ok = lv_img_set_src_sd(ui.img, coverPath)
+
+            if ok ~= false then
+                ui.currentCover = coverPath
+            else
+                print("Failed to load cover")
+            end
+        end
     end
 end
 
@@ -129,6 +144,7 @@ local function formatTime(ms)
 end
 
 function on_tick()
+    -- update playtime
     if audio_is_playing() then
         local pos = audio_get_position()
         local dur = audio_get_duration()
@@ -136,6 +152,13 @@ function on_tick()
             lv_label_set_text(ui.songPlayTime,
                 formatTime(pos) .. " / " .. formatTime(dur))
         end
+    end
+
+    -- detect song change
+    local current = audio_get_current()
+    if current ~= ui.lastSong then
+        ui.lastSong = current
+        updateUI()
     end
 end
 
