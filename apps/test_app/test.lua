@@ -17,12 +17,12 @@ function on_init()
     lv_obj_set_style_pad_bottom(container, 0, LV_PART_MAIN)
     lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN)
     lv_obj_set_style_pad_row(container, 14, LV_PART_MAIN)
-    lv_obj_clear_flag(container, LV_FLAG_SCROLLABLE)
+    lv_obj_clear_flag(container, LV_OBJ_FLAG_SCROLLABLE)
 
     -- Title
     label = lv_label_create(container)
     lv_label_set_text(label, "Hello NovoLabs!")
-    lv_obj_set_style_text_font(label, LV.FONT_XLARGE, LV_PART_MAIN)
+    lv_obj_set_style_text_font(label, font_montserrat_22, LV_PART_MAIN)
     lv_obj_set_style_text_color(label, 0xFFFFFF, LV_PART_MAIN)
 
     -- Battery & time
@@ -40,7 +40,7 @@ function on_init()
         lv_label_set_text(imu_label, string.format(
             "Accel: x=%.2f y=%.2f z=%.2f", imu.x, imu.y, imu.z))
     end
-    lv_obj_set_style_text_color(imu_label, 0x60AAFF, LV.PART_MAIN)
+    lv_obj_set_style_text_color(imu_label, 0x60AAFF, LV_PART_MAIN)
 
     -- NVS counter (persists across sessions)
     local count = nvs_get_int("open_count", 0) + 1
