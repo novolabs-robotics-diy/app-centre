@@ -11,7 +11,11 @@ function on_init()
     lv_obj_set_style_bg_color(container, 0x0D0D0D, LV.PART_MAIN)
     lv_obj_set_style_bg_opa(container, 255, LV.PART_MAIN)
     lv_obj_set_style_border_width(container, 0, LV.PART_MAIN)
-    lv_obj_set_style_pad_all(container, 20, LV.PART_MAIN)
+    lv_obj_set_style_radius(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_left(container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_right(container, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_top(container, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_flex_flow(container, LV.FLEX_FLOW_COLUMN)
     lv_obj_set_style_pad_row(container, 14, LV.PART_MAIN)
     lv_obj_clear_flag(container, LV.FLAG_SCROLLABLE)
@@ -26,7 +30,7 @@ function on_init()
     local info = lv_label_create(container)
     local t = rtc_get_time()
     lv_label_set_text(info, string.format(
-        "%s  🔋 %d%%", t.iso, battery_percent()))
+        "%s  Bat. Level %d%%", t.iso, battery_percent()))
     lv_obj_set_style_text_color(info, 0x909090, LV.PART_MAIN)
     lv_obj_set_style_text_font(info, LV.FONT_SMALL, LV.PART_MAIN)
 
@@ -65,7 +69,7 @@ function on_init()
 
     -- SD image example
     local img = lv_img_create(container)
-    lv_img_set_src_sd(img, "/apps/my-app/icon.png")
+    lv_img_set_src_sd(img, "/apps/test/icon.png")
     lv_obj_set_size(img, 60, 60)
 
     return true  -- on_init must return true to continue
