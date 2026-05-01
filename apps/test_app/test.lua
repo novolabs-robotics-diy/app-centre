@@ -35,11 +35,6 @@ function on_init()
 
     -- IMU readout
     local imu_label = lv_label_create(container)
-    local imu = imu_get_accel()
-    if imu then
-        lv_label_set_text(imu_label, string.format(
-            "Accel: x=%.2f y=%.2f z=%.2f", imu.x, imu.y, imu.z))
-    end
     lv_obj_set_style_text_color(imu_label, 0x60AAFF, LV_PART_MAIN)
 
     -- NVS counter (persists across sessions)
@@ -51,12 +46,14 @@ function on_init()
 
     -- Button with event
     btn = lv_btn_create(container)
-    lv_obj_set_size(btn, 200, 40)
+    lv_obj_set_size(btn, LV_SIZE_CONTENT, LV_SIZE_CONTENT)
     lv_obj_set_style_radius(btn, 10, LV_PART_MAIN)
+    lv_obj_set_style_pad_all(btn, 15, LV_PART_MAIN)
     lv_obj_set_style_bg_color(btn, 0x2979FF, LV_PART_MAIN)
 
     local btn_lbl = lv_label_create(btn)
     lv_label_set_text(btn_lbl, "Check WiFi")
+    lv_obj_set_text_font(btn_lbl, "font_montserrat_18", LV_PART_MAIN)
     lv_obj_center(btn_lbl)
 
     lv_obj_add_event_cb(btn, function(obj, code)
@@ -78,6 +75,11 @@ end
 function on_tick()
     -- Update clock label periodically (every ~1s via counter)
     -- or use lv_timer_create for fine control
+    local imu = imu_get_accel()
+    if imu then
+        lv_label_set_text(imu_label, string.format(
+            "Accel: x=%.2f y=%.2f z=%.2f", imu.x, imu.y, imu.z))
+    end
 end
 
 function on_destroy()
