@@ -1,11 +1,10 @@
--- Music App (NovoLabs OS compatible)
+-- Music App (NovoLabs OS v2.0)
 
 local screen = lv_scr_act()
 
 ui = {}
 state = {
     currentSong = nil,
-    currentCover = nil
 }
 
 -- ================= UTILS =================
@@ -27,17 +26,7 @@ end
 -- ================= AUDIO CONTROL =================
 local function play()
     if audio_is_playing() then return end
-
-    local pos = audio_get_position()
-
-    if pos and pos > 0 then
-        audio_resume()
-    else
-        local list = audio_get_playlist()
-        if list and list[1] then
-            audio_play(list[1])
-        end
-    end
+    audio_play()
 end
 
 local function pause()
@@ -45,12 +34,12 @@ local function pause()
 end
 
 local function next()
-    audio_next()
-    state.currentSong = nil -- force UI refresh
+    audio_forward()
+    state.currentSong = nil  -- force UI refresh on next tick
 end
 
 local function prev()
-    audio_prev()
+    audio_backward()
     state.currentSong = nil
 end
 
@@ -58,116 +47,118 @@ end
 local function updateSong()
     local song = audio_get_current()
     if song then
-        lv_label_set_text(ui.songLabel, song)
+        -- Strip path, show just filename without extension
+        local name = string.match(song, "([^/]+)%.%w+$") or song
+        lv_label_set_text(ui.songLabel, name)
     end
 end
 
 local function updateTime()
-    if audio_is_playing() then
-        local pos = audio_get_position()
-        local dur = audio_get_duration()
-
-        if pos and dur then
-            lv_label_set_text(ui.songPlayTime,
-                formatTime(pos) .. " / " .. formatTime(dur))
-        end
+    local pos = audio_get_position()
+    local dur = audio_get_duration()
+    if pos and dur and dur > 0 then
+        lv_label_set_text(ui.timeLabel,
+            formatTime(pos) .. " / " .. formatTime(dur))
     end
 end
 
 local function updateCover()
     local song = audio_get_current()
     if not song then return end
+    if song == state.currentSong then return end  -- no change
 
-    if song ~= state.currentSong then
-        state.currentSong = song
+    state.currentSong = song
 
-        local cover = normalize(audio_get_cover())
+    local cover = normalize(audio_get_cover())
 
-        if cover then
-            os_log("[music] updating cover: " .. cover)
-
-            -- force refresh (safe for your LVGL bindings)
-            if ui.img then
-                lv_obj_delete(ui.img)
-            end
-
-            ui.img = lv_img_create(ui.container)
-            lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
-            lv_img_set_src_sd(ui.img, cover)
-            lv_obj_set_size(ui.img, LV.SIZE_CONTENT, LV.SIZE_CONTENT)
-
-            state.currentCover = cover
-        else
-            os_log("[music] no cover returned")
-        end
+    if cover then
+        os_log("[music] cover: " .. cover)
+        -- FIX: DO NOT delete/recreate ui.img.
+        -- Just swap the src on the existing widget.
+        -- lv_obj_del inside on_tick is deferred by LVGL 8, so the new
+        -- lv_img_create runs before the old object is cleaned → orphaned widget.
+        lv_img_set_src_sd(ui.img, cover)
+    else
+        os_log("[music] no cover for: " .. song)
+        -- Restore default cover rather than leaving whatever was last
+        lv_img_set_src_sd(ui.img, "/music/covers/default.png")
     end
 end
 
 -- ================= INIT =================
 function on_init()
-    -- ROOT CONTAINER
+    -- Root container
     ui.container = lv_obj_create(screen)
     lv_obj_set_size(ui.container, 320, 480)
     lv_obj_set_style_bg_color(ui.container, 0x000000, LV.PART_MAIN)
     lv_obj_set_style_border_width(ui.container, 0, LV.PART_MAIN)
+    lv_obj_set_style_pad_all(ui.container, 0, LV.PART_MAIN)
+    lv_obj_clear_flag(ui.container, LV.FLAG_SCROLLABLE)
 
-    -- AUDIO INIT
-    audio_start()
-    audio_build_playlist("/music")
-    audio_set_volume(21)
-
-    -- COVER IMAGE
+    -- Cover image
+    -- FIX: Set an explicit pixel size (135×135).
+    -- LV_SIZE_CONTENT on a file-source image in LVGL 8 resolves to 0×0 because
+    -- the file hasn't been decoded yet when the size is applied.
+    -- Set the actual cover dimensions explicitly instead.
     ui.img = lv_img_create(ui.container)
-    lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
+    lv_obj_set_size(ui.img, 200, 200)
+    lv_obj_align(ui.img, LV.ALIGN_TOP_MID, 0, 40)
     lv_img_set_src_sd(ui.img, "/music/covers/default.png")
-    lv_obj_set_size(ui.img, LV.SIZE_CONTENT, LV.SIZE_CONTENT)
 
-    -- SONG LABEL
+    -- Song label
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "No song playing")
-    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_MID, 0, -100)
+    lv_obj_align(ui.songLabel, LV.ALIGN_TOP_MID, 0, 260)
     lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
+    lv_obj_set_style_text_color(ui.songLabel, 0xFFFFFF, LV.PART_MAIN)
 
-    -- TIME LABEL
-    ui.songPlayTime = lv_label_create(ui.container)
-    lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
-    lv_obj_set_style_text_color(ui.songPlayTime, 0x808080, LV.PART_MAIN)
-    lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -80)
+    -- Time label
+    ui.timeLabel = lv_label_create(ui.container)
+    lv_label_set_text(ui.timeLabel, "0:00 / 0:00")
+    lv_obj_align(ui.timeLabel, LV.ALIGN_TOP_MID, 0, 290)
+    lv_obj_set_style_text_color(ui.timeLabel, 0x808080, LV.PART_MAIN)
+    lv_obj_set_style_text_font(ui.timeLabel, LV.FONT_SMALL, LV.PART_MAIN)
 
-    -- PANEL
+    -- Controls panel
     local panel = lv_obj_create(ui.container)
-    lv_obj_set_size(panel, 290, 60)
+    lv_obj_set_size(panel, 290, 70)
     lv_obj_align(panel, LV.ALIGN_BOTTOM_MID, 0, -15)
     lv_obj_set_style_bg_color(panel, 0x101010, LV.PART_MAIN)
     lv_obj_set_style_border_color(panel, 0x202020, LV.PART_MAIN)
+    lv_obj_set_style_border_width(panel, 1, LV.PART_MAIN)
+    lv_obj_set_style_radius(panel, 35, LV.PART_MAIN)
     lv_obj_clear_flag(panel, LV.FLAG_SCROLLABLE)
     lv_obj_set_flex_flow(panel, LV.FLEX_FLOW_ROW)
-    lv_obj_set_flex_align(panel, LV.FLEX_ALIGN_SPACE_BETWEEN, LV.FLEX_ALIGN_START, LV.FLEX_ALIGN_CENTER)
-    lv_obj_set_style_radius(panel, 100, LV.PART_MAIN)
+    lv_obj_set_flex_align(panel, LV.FLEX_ALIGN_SPACE_EVENLY, LV.FLEX_ALIGN_CENTER, LV.FLEX_ALIGN_CENTER)
+    lv_obj_set_style_pad_all(panel, 8, LV.PART_MAIN)
 
     local function createBtn(txt)
         local btn = lv_btn_create(panel)
-        lv_obj_set_size(btn, 50, 50)
+        lv_obj_set_size(btn, 52, 52)
         lv_obj_set_style_bg_color(btn, 0x202020, LV.PART_MAIN)
-        lv_obj_set_style_radius(btn, 100, LV.PART_MAIN)
-
+        lv_obj_set_style_radius(btn, 26, LV.PART_MAIN)
+        lv_obj_set_style_border_width(btn, 0, LV.PART_MAIN)
         local lbl = lv_label_create(btn)
         lv_label_set_text(lbl, txt)
         lv_obj_center(lbl)
-
         return btn
     end
 
-    local back = createBtn("<<")
-    local playBtn = createBtn(">")
-    local pauseBtn = createBtn("||")
-    local nextBtn = createBtn(">>")
+    local btnPrev = createBtn("<<")
+    local btnPlay = createBtn(">")
+    local btnPause = createBtn("||")
+    local btnNext = createBtn(">>")
 
-    -- EVENTS
-    lv_obj_add_event_cb(playBtn, function() play() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(pauseBtn, function() pause() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(nextBtn, function() next() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(back, function() prev() end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(btnPlay,  function() play()  end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(btnPause, function() pause() end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(btnNext,  function() next()  end, LV_EVENT_CLICKED)
+    lv_obj_add_event_cb(btnPrev,  function() prev()  end, LV_EVENT_CLICKED)
+
+    -- Start audio
+    audio_start()
+    audio_build_playlist("/music")
+    audio_set_volume(18)
+    audio_play()
 
     return true
 end
@@ -181,5 +172,6 @@ end
 
 -- ================= DESTROY =================
 function on_destroy()
+    audio_stop()
     os_log("Music app closed")
 end
