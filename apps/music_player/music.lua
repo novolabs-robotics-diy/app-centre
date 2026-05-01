@@ -88,7 +88,7 @@ local function updateCover()
 
             -- force refresh (safe for your LVGL bindings)
             if ui.img then
-                lv_obj_del(ui.img)
+                lv_obj_delete(ui.img)
             end
 
             ui.img = lv_img_create(ui.container)
