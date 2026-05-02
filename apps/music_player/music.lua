@@ -56,14 +56,15 @@ function on_init()
 
     -- BUTTONS
     local function btn(txt)
-        btn = lv_btn_create(ui.panel)
-        lv_obj_set_size(btn, 50, 50)
-        lv_obj_set_style_bg_color(btn, 0x202020, LV_PART_MAIN)
-        lv_obj_set_style_radius(btn, 100, LV_PART_MAIN)
+        local b = lv_btn_create(ui.panel)
+        lv_obj_set_size(b, 50, 50)
+        lv_obj_set_style_bg_color(b, 0x202020, LV_PART_MAIN)
+        lv_obj_set_style_radius(b, 100, LV_PART_MAIN)
 
-        lbl = lv_label_create(btn)
-        lv_label_set_text(lbl, txt)
-        lv_obj_center(lbl)
+        local l = lv_label_create(btn)
+        lv_label_set_text(l, txt)
+        lv_obj_center(l)
+        return b
     end
 
     ui.btnPrev = btn("Back")
