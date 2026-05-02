@@ -134,7 +134,7 @@ function on_tick()
         Serial.println("[IMG DEBUG] " + String(imgPathStore));
     else
         lv_img_set_src_sd(ui.img, "")
-        lv_img_set_src_sd(ui.img, "/apps/music_player/default.png")
+        lv_img_set_src_sd(ui.img, "/music/covers/default.png")
         lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
     end
 end
