@@ -1,10 +1,12 @@
--- Music Player (FIXED - NovoLabs OS runtime compatible)
+-- Music Player (NovoLabs OS v3 - FULL METADATA SYSTEM)
 
 local screen = lv_scr_act()
 
 ui = {}
+
 state = {
-    lastSong = nil,
+    playlist = {},
+    index = 1,
     currentCover = nil
 }
 
@@ -18,77 +20,71 @@ function on_init()
     lv_obj_set_style_border_width(ui.container, 0, LV.PART_MAIN)
     lv_obj_set_style_pad_all(ui.container, 0, LV.PART_MAIN)
 
+    -- AUDIO INIT
     audio_start()
     audio_build_playlist("/music")
     audio_set_volume(21)
 
-    -- Cover
+    -- COVER
     ui.img = lv_img_create(ui.container)
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
     lv_img_set_src_sd(ui.img, "/music/covers/default.png")
 
-    -- Song label
+    -- TITLE
     ui.songLabel = lv_label_create(ui.container)
-    lv_label_set_text(ui.songLabel, "No song playing")
+    lv_label_set_text(ui.songLabel, "Loading...")
     lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 0, -100)
-    lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
 
-    -- Time
+    -- TIME
     ui.songPlayTime = lv_label_create(ui.container)
     lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
-    lv_obj_set_style_text_color(ui.songPlayTime, 0x808080, LV.PART_MAIN)
     lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -80)
 
-    -- Panel
+    -- PANEL
     ui.panel = lv_obj_create(ui.container)
     lv_obj_set_size(ui.panel, 290, 60)
     lv_obj_align(ui.panel, LV.ALIGN_BOTTOM_MID, 0, -15)
     lv_obj_set_style_bg_color(ui.panel, 0x101010, LV.PART_MAIN)
-    lv_obj_set_style_border_color(ui.panel, 0x202020, LV.PART_MAIN)
-    lv_obj_clear_flag(ui.panel, LV.FLAG_SCROLLABLE)
+    lv_obj_set_style_radius(ui.panel, 100, LV.PART_MAIN)
     lv_obj_set_flex_flow(ui.panel, LV.FLEX_FLOW_ROW)
     lv_obj_set_flex_align(ui.panel,
         LV.FLEX_ALIGN_SPACE_BETWEEN,
-        LV.FLEX_ALIGN_START,
+        LV.FLEX_ALIGN_CENTER,
         LV.FLEX_ALIGN_CENTER)
-    lv_obj_set_style_radius(ui.panel, 100, LV.PART_MAIN)
 
-    -- Button factory
-    local function createBtn(txt)
-        local btn = lv_btn_create(ui.panel)
-        lv_obj_set_size(btn, 50, 50)
-        lv_obj_set_style_bg_color(btn, 0x202020, LV.PART_MAIN)
-        lv_obj_set_style_radius(btn, 100, LV.PART_MAIN)
-
-        local lbl = lv_label_create(btn)
-        lv_label_set_text(lbl, txt)
-        lv_obj_center(lbl)
-
-        return btn
+    -- BUTTONS
+    local function btn(txt)
+        local b = lv_btn_create(ui.panel)
+        lv_obj_set_size(b, 50, 50)
+        local l = lv_label_create(b)
+        lv_label_set_text(l, txt)
+        lv_obj_center(l)
+        return b
     end
 
-    -- Buttons (UNCHANGED UI)
-    ui.backwardBtn = createBtn("Back")
-    ui.playBtn     = createBtn("Play")
-    ui.pauseBtn    = createBtn("Pause")
-    ui.forwardBtn  = createBtn("Next")
+    ui.btnPrev = btn("Back")
+    ui.btnPlay = btn("Play")
+    ui.btnPause = btn("Pause")
+    ui.btnNext = btn("Next")
 
-    -- ================= FIXED EVENTS =================
+    -- ================= EVENTS =================
 
-    lv_obj_add_event_cb(ui.playBtn, function()
+    lv_obj_add_event_cb(ui.btnPlay, function()
         audio_play()
     end, LV_EVENT_CLICKED)
 
-    lv_obj_add_event_cb(ui.pauseBtn, function()
+    lv_obj_add_event_cb(ui.btnPause, function()
         audio_pause()
     end, LV_EVENT_CLICKED)
 
-    lv_obj_add_event_cb(ui.forwardBtn, function()
+    lv_obj_add_event_cb(ui.btnNext, function()
         audio_next()
+        state.index = state.index + 1
     end, LV_EVENT_CLICKED)
 
-    lv_obj_add_event_cb(ui.backwardBtn, function()
+    lv_obj_add_event_cb(ui.btnPrev, function()
         audio_prev()
+        state.index = state.index - 1
     end, LV_EVENT_CLICKED)
 
     return true
@@ -104,18 +100,39 @@ local function formatTime(ms)
     return string.format("%d:%02d", min, sec)
 end
 
--- ================= UI UPDATE =================
+-- ================= SYNC PLAYLIST =================
+
+local function syncPlaylist()
+    local list = audio_get_playlist()
+    if not list or #list == 0 then return end
+
+    state.playlist = list
+
+    if state.index < 1 then state.index = 1 end
+    if state.index > #list then state.index = 1 end
+end
+
+local function current()
+    return state.playlist[state.index]
+end
+
+-- ================= UI =================
+
+local function updateSong()
+
+    local t = current()
+    if not t then return end
+
+    local title = t.title or t.file or "Unknown"
+    lv_label_set_text(ui.songLabel, title)
+end
 
 local function updateCover()
 
-    local cover = audio_get_cover()
-    if not cover then
-        cover = "/music/covers/default.png"
-    end
+    local t = current()
+    if not t then return end
 
-    if not string.find(cover, "^/") then
-        cover = "/" .. cover
-    end
+    local cover = t.cover or "/music/covers/default.png"
 
     if state.currentCover == cover then return end
     state.currentCover = cover
@@ -126,41 +143,25 @@ local function updateCover()
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
 end
 
-local function updateSong()
-    local list = audio_get_playlist()
-    if not list then return end
-
-    -- fallback: show first playing track metadata
-    local name = "Playing..."
-
-    if list[1] and list[1].title then
-        name = list[1].title
-    elseif list[1] and list[1].file then
-        name = string.match(list[1].file, "([^/]+)%.%w+$") or list[1].file
-    end
-
-    lv_label_set_text(ui.songLabel, name)
-end
-
 -- ================= TICK =================
 
 function on_tick()
+
+    syncPlaylist()
 
     if audio_is_playing() then
         local pos = audio_get_position()
         local dur = audio_get_duration()
 
-        if pos and dur then
-            lv_label_set_text(ui.songPlayTime,
-                formatTime(pos) .. " / " .. formatTime(dur))
-        end
+        lv_label_set_text(ui.songPlayTime,
+            formatTime(pos) .. " / " .. formatTime(dur))
     end
 
     updateSong()
     updateCover()
 end
 
--- ================= DESTROY =================
+-- ================= CLEAN =================
 
 function on_destroy()
     audio_stop()
