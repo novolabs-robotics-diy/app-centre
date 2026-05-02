@@ -1,13 +1,17 @@
--- Music App (NovoLabs OS v2.0)
+-- Music App (NovoLabs OS v2.0 FIXED)
 
 local screen = lv_scr_act()
 
 ui = {}
+
 state = {
-    currentSong = nil,
+    playlist = {},
+    index = 1,
     currentCover = nil
 }
+
 -- ================= UTILS =================
+
 local function normalize(path)
     if not path then return nil end
     if not string.find(path, "^/") then
@@ -17,6 +21,7 @@ local function normalize(path)
 end
 
 local function formatTime(ms)
+    if not ms then return "0:00" end
     local sec = ms // 1000
     local min = sec // 60
     sec = sec % 60
@@ -24,8 +29,8 @@ local function formatTime(ms)
 end
 
 -- ================= AUDIO CONTROL =================
+
 local function play()
-    if audio_is_playing() then return end
     audio_play()
 end
 
@@ -35,147 +40,153 @@ end
 
 local function next()
     audio_forward()
-    state.currentSong = nil  -- force UI refresh on next tick
+    state.index = state.index + 1
+    if state.index > #state.playlist then
+        state.index = 1
+    end
 end
 
 local function prev()
     audio_backward()
-    state.currentSong = nil
+    state.index = state.index - 1
+    if state.index < 1 then
+        state.index = #state.playlist
+    end
+end
+
+-- ================= PLAYLIST CACHE =================
+
+local function refreshPlaylist()
+    local list = audio_get_playlist()
+    if not list then return end
+
+    state.playlist = list
+
+    if state.index < 1 then state.index = 1 end
+    if state.index > #list then state.index = 1 end
+end
+
+local function getCurrent()
+    return state.playlist[state.index]
 end
 
 -- ================= UI UPDATE =================
+
 local function updateSong()
-    local song = audio_get_current()
-    if song then
-        -- Strip path, show just filename without extension
-        local name = string.match(song, "([^/]+)%.%w+$") or song
-        lv_label_set_text(ui.songLabel, name)
-    end
+    local song = getCurrent()
+    if not song then return end
+
+    local name = song.title or song.file or "Unknown"
+    lv_label_set_text(ui.songLabel, name)
 end
 
 local function updateTime()
     local pos = audio_get_position()
     local dur = audio_get_duration()
-    if pos and dur and dur > 0 then
-        lv_label_set_text(ui.timeLabel,
-            formatTime(pos) .. " / " .. formatTime(dur))
-    end
+
+    lv_label_set_text(ui.timeLabel,
+        formatTime(pos) .. " / " .. formatTime(dur))
 end
 
 local function updateCover()
-    local cover = audio_get_cover()
-    local path = normalize(cover) or "/music/covers/default.png"
 
-    -- IMPORTANT: don't reload same image
-    if state.currentCover == path then return end
-    state.currentCover = path
+    local song = getCurrent()
+    if not song then return end
 
-    os_log("[music] cover swap -> " .. path)
-    os_log("[music] cover raw: " .. tostring(cover))
+    local cover = song.cover or "/music/covers/default.png"
+    cover = normalize(cover)
 
-    -- Small delay trick: avoids race with audio thread
-    lv_timer_create(function()
-        lv_img_set_src_sd(ui.img, path)
-        lv_obj_center(ui.img)
-    end, 10, nil)
+    if state.currentCover == cover then return end
+    state.currentCover = cover
+
+    os_log("[music] cover -> " .. cover)
+
+    -- IMPORTANT FIX:
+    -- no lv_timer_create, no async delay (that was causing black image)
+    lv_img_set_src_sd(ui.img, cover)
+    lv_obj_center(ui.img)
 end
 
 -- ================= INIT =================
+
 function on_init()
-    -- Root container
+
     ui.container = lv_obj_create(screen)
     lv_obj_set_size(ui.container, 320, 480)
     lv_obj_set_style_bg_color(ui.container, 0x000000, LV.PART_MAIN)
-    lv_obj_set_style_border_width(ui.container, 0, LV.PART_MAIN)
-    lv_obj_set_style_pad_all(ui.container, 0, LV.PART_MAIN)
     lv_obj_clear_flag(ui.container, LV.FLAG_SCROLLABLE)
 
-    -- Cover image
-    -- Wrap in a fixed 200x200 clipping container. lv_img_set_src internally
-    -- calls lv_obj_refresh_self_size() which queues a layout pass AFTER
-    -- lv_obj_set_size/align — so any explicit size you set gets overwritten by
-    -- the PNG's natural pixel dimensions. The container clips the image to a
-    -- fixed area regardless of what the inner img widget does.
     ui.imgBox = lv_obj_create(ui.container)
     lv_obj_set_size(ui.imgBox, 200, 200)
     lv_obj_align(ui.imgBox, LV.ALIGN_TOP_MID, 0, 40)
     lv_obj_set_style_bg_color(ui.imgBox, 0x111111, LV.PART_MAIN)
-    lv_obj_set_style_border_width(ui.imgBox, 0, LV.PART_MAIN)
-    lv_obj_set_style_pad_all(ui.imgBox, 0, LV.PART_MAIN)
     lv_obj_set_style_radius(ui.imgBox, 12, LV.PART_MAIN)
-    lv_obj_clear_flag(ui.imgBox, LV.FLAG_SCROLLABLE)
-    -- Default lv_obj clips its children to its own bounds — no extra flag needed
 
     ui.img = lv_img_create(ui.imgBox)
     lv_obj_center(ui.img)
     lv_img_set_src_sd(ui.img, "/music/covers/default.png")
 
-    -- Song label
     ui.songLabel = lv_label_create(ui.container)
-    lv_label_set_text(ui.songLabel, "No song playing")
     lv_obj_align(ui.songLabel, LV.ALIGN_TOP_MID, 0, 260)
-    lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
-    lv_obj_set_style_text_color(ui.songLabel, 0xFFFFFF, LV.PART_MAIN)
+    lv_label_set_text(ui.songLabel, "Loading...")
 
-    -- Time label
     ui.timeLabel = lv_label_create(ui.container)
-    lv_label_set_text(ui.timeLabel, "0:00 / 0:00")
     lv_obj_align(ui.timeLabel, LV.ALIGN_TOP_MID, 0, 290)
-    lv_obj_set_style_text_color(ui.timeLabel, 0x808080, LV.PART_MAIN)
-    lv_obj_set_style_text_font(ui.timeLabel, LV.FONT_SMALL, LV.PART_MAIN)
+    lv_label_set_text(ui.timeLabel, "0:00 / 0:00")
 
-    -- Controls panel
+    -- Controls
     local panel = lv_obj_create(ui.container)
     lv_obj_set_size(panel, 290, 70)
     lv_obj_align(panel, LV.ALIGN_BOTTOM_MID, 0, -15)
-    lv_obj_set_style_bg_color(panel, 0x101010, LV.PART_MAIN)
-    lv_obj_set_style_border_color(panel, 0x202020, LV.PART_MAIN)
-    lv_obj_set_style_border_width(panel, 1, LV.PART_MAIN)
-    lv_obj_set_style_radius(panel, 35, LV.PART_MAIN)
-    lv_obj_clear_flag(panel, LV.FLAG_SCROLLABLE)
-    lv_obj_set_flex_flow(panel, LV.FLEX_FLOW_ROW)
-    lv_obj_set_flex_align(panel, LV.FLEX_ALIGN_SPACE_EVENLY, LV.FLEX_ALIGN_CENTER, LV.FLEX_ALIGN_CENTER)
-    lv_obj_set_style_pad_all(panel, 8, LV.PART_MAIN)
 
-    local function createBtn(txt)
-        local btn = lv_btn_create(panel)
-        lv_obj_set_size(btn, 52, 52)
-        lv_obj_set_style_bg_color(btn, 0x202020, LV.PART_MAIN)
-        lv_obj_set_style_radius(btn, 26, LV.PART_MAIN)
-        lv_obj_set_style_border_width(btn, 0, LV.PART_MAIN)
-        local lbl = lv_label_create(btn)
-        lv_label_set_text(lbl, txt)
-        lv_obj_center(lbl)
-        return btn
+    local function btn(txt, cb)
+        local b = lv_btn_create(panel)
+        lv_obj_set_size(b, 52, 52)
+        local l = lv_label_create(b)
+        lv_label_set_text(l, txt)
+        lv_obj_center(l)
+        lv_obj_add_event_cb(b, cb, LV_EVENT_CLICKED)
+        return b
     end
 
-    local btnPrev = createBtn("<<")
-    local btnPlay = createBtn(">")
-    local btnPause = createBtn("||")
-    local btnNext = createBtn(">>")
+    btn("<<", function()
+        prev()
+        refreshPlaylist()
+    end)
 
-    lv_obj_add_event_cb(btnPlay,  function() play()  end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(btnPause, function() pause() end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(btnNext,  function() next()  end, LV_EVENT_CLICKED)
-    lv_obj_add_event_cb(btnPrev,  function() prev()  end, LV_EVENT_CLICKED)
+    btn(">", function()
+        play()
+        refreshPlaylist()
+    end)
 
-    -- Start audio
+    btn("||", pause)
+
+    btn(">>", function()
+        next()
+        refreshPlaylist()
+    end)
+
+    -- AUDIO INIT
     audio_start()
     audio_build_playlist("/music")
     audio_set_volume(18)
+
+    refreshPlaylist()
 
     return true
 end
 
 -- ================= TICK =================
+
 function on_tick()
+    refreshPlaylist()
     updateSong()
     updateTime()
     updateCover()
 end
 
--- ================= DESTROY =================
+-- ================= CLEANUP =================
+
 function on_destroy()
     audio_stop()
-    os_log("Music app closed")
 end
