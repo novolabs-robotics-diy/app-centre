@@ -1,4 +1,4 @@
--- Music Player (NovoLabs OS v3 FIXED)
+-- Music Player (NovoLabs OS v3 FINAL STABLE)
 
 local screen = lv_scr_act()
 
@@ -7,7 +7,8 @@ ui = {}
 state = {
     playlist = {},
     index = 1,
-    currentCover = nil
+    currentCover = nil,
+    started = false
 }
 
 -- ================= INIT =================
@@ -20,22 +21,27 @@ function on_init()
     lv_obj_set_style_border_width(ui.container, 0, LV_PART_MAIN)
     lv_obj_set_style_pad_all(ui.container, 0, LV_PART_MAIN)
 
+    -- AUDIO
     audio_start()
     audio_load_playlist()
     audio_set_volume(21)
 
+    -- COVER
     ui.img = lv_img_create(ui.container)
-    lv_img_set_src_sd(ui.img, "")
-    lv_img_set_src_sd(ui.img, "/music/covers/default.png")
+    lv_img_set_src_sd(ui.img, "/music/covers/default.bmp") -- use BMP if possible
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
 
+    -- TITLE
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "Loading...")
     lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 15, -105)
+    lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
 
+    -- TIME
     ui.songPlayTime = lv_label_create(ui.container)
     lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
     lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -85)
+    lv_obj_set_style_text_color(ui.songPlayTime, 0x808080, LV.PART_MAIN)
 
     -- PANEL
     ui.panel = lv_obj_create(ui.container)
@@ -52,7 +58,7 @@ function on_init()
         LV.FLEX_ALIGN_CENTER,
         LV.FLEX_ALIGN_CENTER)
 
-    -- FIXED BUTTONS
+    -- BUTTON FACTORY
     local function btn(txt)
         local b = lv_btn_create(ui.panel)
 
@@ -67,19 +73,19 @@ function on_init()
         return b
     end
 
-    ui.btnPrev = btn("Back")
-    ui.btnPlay = btn("Play")
+    ui.btnPrev  = btn("Back")
+    ui.btnPlay  = btn("Play")
     ui.btnPause = btn("Pause")
-    ui.btnNext = btn("Next")
+    ui.btnNext  = btn("Next")
 
     -- EVENTS (NEW API ONLY)
 
     lv_obj_add_event_cb(ui.btnPlay, function()
-        local list = audio_get_playlist()
-        if list and list[1] then
+        if not state.started then
+            state.started = true
             state.index = 1
-            audio_play()
         end
+        audio_play()
     end, LV_EVENT_CLICKED)
 
     lv_obj_add_event_cb(ui.btnPause, function()
@@ -109,45 +115,79 @@ local function formatTime(ms)
     return string.format("%d:%02d", min, sec)
 end
 
--- ================= UI =================
+-- ================= PLAYLIST =================
 
-function on_tick()
-
+local function syncPlaylist()
     local list = audio_get_playlist()
-    if not list or #list == 0 then return end
+    if not list or #list == 0 then return false end
 
-    local idx = state.index or 1
-    if idx < 1 then idx = 1 end
-    if idx > #list then idx = 1 end
+    state.playlist = list
 
-    state.index = idx
-    local t = list[idx]
+    if state.index < 1 then state.index = 1 end
+    if state.index > #list then state.index = 1 end
 
-    if t then
-        lv_label_set_text(ui.songLabel, t.title or t.file)
-    end
+    return true
+end
 
-    if audio_is_playing() then
-        local pos = audio_get_position()
-        local dur = audio_get_duration()
+local function currentTrack()
+    return state.playlist[state.index]
+end
 
+-- ================= UI UPDATE =================
+
+local function updateSong(t)
+    if not t then return end
+    local title = t.title or t.file or "Unknown"
+    lv_label_set_text(ui.songLabel, title)
+end
+
+local function updateTime()
+    if not audio_is_playing() then return end
+
+    local pos = audio_get_position()
+    local dur = audio_get_duration()
+
+    if pos and dur then
         lv_label_set_text(ui.songPlayTime,
             formatTime(pos) .. " / " .. formatTime(dur))
     end
-
-    if t then
-        local cover = t.cover or "/music/covers/default.png"
-
-        if state.currentCover ~= cover then
-            state.currentCover = cover
-
-            os_log("[music] loading cover -> " .. tostring(cover))
-
-            lv_img_set_src_sd(ui.img, cover)
-            lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
-        end   
-    end
 end
+
+local function updateCover(t)
+    if not t then return end
+
+    local cover = t.cover
+
+    if not cover or cover == "" then
+        cover = "/music/covers/default.bmp"
+    end
+
+    -- prevent redraw spam
+    if state.currentCover == cover then return end
+    state.currentCover = cover
+
+    os_log("[music] loading cover -> " .. cover)
+
+    -- IMPORTANT: never send empty path
+    lv_img_set_src_sd(ui.img, cover)
+    lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
+end
+
+-- ================= TICK =================
+
+function on_tick()
+
+    if not syncPlaylist() then return end
+
+    local t = currentTrack()
+    if not t then return end
+
+    updateSong(t)
+    updateTime()
+    updateCover(t)
+end
+
+-- ================= CLEAN =================
 
 function on_destroy()
     audio_stop()
