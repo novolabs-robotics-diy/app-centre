@@ -27,25 +27,27 @@ function on_init()
 
     -- COVER
     ui.img = lv_img_create(ui.container)
-    lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
+    lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
     lv_img_set_src_sd(ui.img, "/music/covers/default.png")
 
     -- TITLE
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "Loading...")
-    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 0, -100)
+    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 15, -110)
 
     -- TIME
     ui.songPlayTime = lv_label_create(ui.container)
     lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
-    lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -80)
+    lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -85)
 
-    -- PANEL
+    -- PANEL  
     ui.panel = lv_obj_create(ui.container)
     lv_obj_set_size(ui.panel, 290, 60)
     lv_obj_align(ui.panel, LV.ALIGN_BOTTOM_MID, 0, -15)
     lv_obj_set_style_bg_color(ui.panel, 0x101010, LV.PART_MAIN)
     lv_obj_set_style_radius(ui.panel, 100, LV.PART_MAIN)
+    lv_obj_set_style_border_color(ui.panel, 0x202020, LV.PART_MAIN)
+    lv_obj_clear_flag(ui.panel, LV.FLAG_SCROLLABLE)
     lv_obj_set_flex_flow(ui.panel, LV.FLEX_FLOW_ROW)
     lv_obj_set_flex_align(ui.panel,
         LV.FLEX_ALIGN_SPACE_BETWEEN,
@@ -54,12 +56,14 @@ function on_init()
 
     -- BUTTONS
     local function btn(txt)
-        local b = lv_btn_create(ui.panel)
-        lv_obj_set_size(b, 50, 50)
-        local l = lv_label_create(b)
-        lv_label_set_text(l, txt)
-        lv_obj_center(l)
-        return b
+        btn = lv_btn_create(ui.panel)
+        lv_obj_set_size(btn, 50, 50)
+        lv_obj_set_style_bg_color(btn, 0x202020, LV_PART_MAIN)
+        lv_obj_set_style_radius(btn, 100, LV_PART_MAIN)
+
+        lbl = lv_label_create(btn)
+        lv_label_set_text(lbl, txt)
+        lv_obj_center(lbl)
     end
 
     ui.btnPrev = btn("Back")
@@ -137,7 +141,7 @@ local function updateCover()
     if state.currentCover == cover then return end
     state.currentCover = cover
 
-    print("[music] cover -> " .. cover)
+    os_log("[music] cover -> " .. cover)
 
     lv_img_set_src_sd(ui.img, cover)
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -135)
