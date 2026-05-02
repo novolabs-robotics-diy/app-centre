@@ -65,24 +65,23 @@ end
 local function updateCover()
     local song = audio_get_current()
     if not song then return end
-    if song == state.currentSong then return end  -- no change
+    if song == state.currentSong then return end
 
     state.currentSong = song
 
     local cover = normalize(audio_get_cover())
+    local path = cover or "/music/covers/default.png"
 
-    if cover then
-        os_log("[music] cover: " .. cover)
-        -- FIX: DO NOT delete/recreate ui.img.
-        -- Just swap the src on the existing widget.
-        -- lv_obj_del inside on_tick is deferred by LVGL 8, so the new
-        -- lv_img_create runs before the old object is cleaned → orphaned widget.
-        lv_img_set_src_sd(ui.img, cover)
-    else
-        os_log("[music] no cover for: " .. song)
-        -- Restore default cover rather than leaving whatever was last
-        lv_img_set_src_sd(ui.img, "/music/covers/default.png")
-    end
+    os_log("[music] heap before cover: " .. tostring(os_free_heap()))
+    lv_img_set_src_sd(ui.img, path)
+
+    -- FIX: lv_img_set_src in LVGL 8 auto-resizes the widget to the PNG's
+    -- actual pixel dimensions, overwriting any explicit size set earlier.
+    -- Re-apply the size every time after swapping src.
+    lv_obj_set_size(ui.img, 200, 200)
+    lv_obj_align(ui.img, LV.ALIGN_TOP_MID, 0, 40)
+
+    os_log("[music] heap after cover: " .. tostring(os_free_heap()))
 end
 
 -- ================= INIT =================
