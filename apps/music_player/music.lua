@@ -31,7 +31,7 @@ function on_init()
 
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "Loading...")
-    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 15, -110)
+    lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 15, -105)
 
     ui.songPlayTime = lv_label_create(ui.container)
     lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
@@ -75,7 +75,11 @@ function on_init()
     -- EVENTS (NEW API ONLY)
 
     lv_obj_add_event_cb(ui.btnPlay, function()
-        audio_play()
+        local list = audio_get_playlist()
+        if list and list[1] then
+            state.index = 1
+            audio_play()
+        end
     end, LV_EVENT_CLICKED)
 
     lv_obj_add_event_cb(ui.btnPause, function()
