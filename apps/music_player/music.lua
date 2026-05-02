@@ -72,17 +72,14 @@ local function updateCover()
     local cover = normalize(audio_get_cover())
     local path = cover or "/music/covers/default.png"
 
-    os_log("[music] heap before cover: " .. tostring(os_free_heap()))
+    os_log("[music] cover swap -> " .. path)
+
+    -- Just swap the src. The fixed imgBox container clips to 200x200
+    -- regardless of what lv_obj_refresh_self_size does to ui.img.
+    lv_obj_set_style_bg_color(ui.img, 0xFF0000, LV.PART_MAIN)
     lv_img_set_src_sd(ui.img, path)
-
-    -- FIX: lv_img_set_src in LVGL 8 auto-resizes the widget to the PNG's
-    -- actual pixel dimensions, overwriting any explicit size set earlier.
-    -- Re-apply the size every time after swapping src.
-    lv_obj_set_size(ui.img, 200, 200)
-    lv_obj_align(ui.img, LV.ALIGN_TOP_MID, 0, 40)
-    lv_obj_set_style_bg_color(ui.img, 0xFF0000, LV.PART_MAIN)  -- red debug bg
-
-    os_log("[music] heap after cover: " .. tostring(os_free_heap()))
+    -- Center inside the box after src swap (safe — only repositions within box)
+    lv_obj_center(ui.img)
 end
 
 -- ================= INIT =================
@@ -96,13 +93,23 @@ function on_init()
     lv_obj_clear_flag(ui.container, LV.FLAG_SCROLLABLE)
 
     -- Cover image
-    -- FIX: Set an explicit pixel size (135×135).
-    -- LV_SIZE_CONTENT on a file-source image in LVGL 8 resolves to 0×0 because
-    -- the file hasn't been decoded yet when the size is applied.
-    -- Set the actual cover dimensions explicitly instead.
-    ui.img = lv_img_create(ui.container)
-    lv_obj_set_size(ui.img, 200, 200)
-    lv_obj_align(ui.img, LV.ALIGN_TOP_MID, 0, 40)
+    -- Wrap in a fixed 200x200 clipping container. lv_img_set_src internally
+    -- calls lv_obj_refresh_self_size() which queues a layout pass AFTER
+    -- lv_obj_set_size/align — so any explicit size you set gets overwritten by
+    -- the PNG's natural pixel dimensions. The container clips the image to a
+    -- fixed area regardless of what the inner img widget does.
+    ui.imgBox = lv_obj_create(ui.container)
+    lv_obj_set_size(ui.imgBox, 200, 200)
+    lv_obj_align(ui.imgBox, LV.ALIGN_TOP_MID, 0, 40)
+    lv_obj_set_style_bg_color(ui.imgBox, 0x111111, LV.PART_MAIN)
+    lv_obj_set_style_border_width(ui.imgBox, 0, LV.PART_MAIN)
+    lv_obj_set_style_pad_all(ui.imgBox, 0, LV.PART_MAIN)
+    lv_obj_set_style_radius(ui.imgBox, 12, LV.PART_MAIN)
+    lv_obj_clear_flag(ui.imgBox, LV.FLAG_SCROLLABLE)
+    -- Default lv_obj clips its children to its own bounds — no extra flag needed
+
+    ui.img = lv_img_create(ui.imgBox)
+    lv_obj_center(ui.img)
     lv_img_set_src_sd(ui.img, "/music/covers/default.png")
 
     -- Song label
@@ -158,7 +165,6 @@ function on_init()
     audio_start()
     audio_build_playlist("/music")
     audio_set_volume(18)
-    -- audio_play()
 
     return true
 end
