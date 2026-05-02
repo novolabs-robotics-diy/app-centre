@@ -84,10 +84,12 @@ function on_init()
 
     lv_obj_add_event_cb(ui.btnNext, function()
         audio_next()
+        state.index = state.index + 1
     end, LV_EVENT_CLICKED)
 
     lv_obj_add_event_cb(ui.btnPrev, function()
         audio_prev()
+        state.index = state.index - 1
     end, LV_EVENT_CLICKED)
 
     return true
@@ -110,7 +112,12 @@ function on_tick()
     local list = audio_get_playlist()
     if not list or #list == 0 then return end
 
-    local t = list[state.index]
+    local idx = state.index or 1
+    if idx < 1 then idx = 1 end
+    if idx > #list then idx = 1 end
+
+    state.index = idx
+    local t = list[idx]
 
     if t then
         lv_label_set_text(ui.songLabel, t.title or t.file)
@@ -124,16 +131,17 @@ function on_tick()
             formatTime(pos) .. " / " .. formatTime(dur))
     end
 
-    if t and t.cover and state.currentCover ~= t.cover then
-        state.currentCover = t.cover
-        os_log("[music] loading cover -> " .. tostring(cover))
-        lv_img_set_src_sd(ui.img, "")
-        lv_img_set_src_sd(ui.img, t.cover)
-        lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
-    else
-        lv_img_set_src_sd(ui.img, "")
-        lv_img_set_src_sd(ui.img, "/music/covers/default.png")
-        lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
+    if t then
+        local cover = t.cover or "/music/covers/default.png"
+
+        if state.currentCover ~= cover then
+            state.currentCover = cover
+
+            os_log("[music] loading cover -> " .. tostring(cover))
+
+            lv_img_set_src_sd(ui.img, cover)
+            lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
+        end   
     end
 end
 
