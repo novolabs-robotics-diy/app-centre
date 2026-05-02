@@ -34,11 +34,13 @@ function on_init()
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "Loading...")
     lv_obj_align(ui.songLabel, LV.ALIGN_BOTTOM_LEFT, 15, -110)
+    lv_obj_set_style_text_font(ui.songLabel, LV.FONT_NORMAL, LV.PART_MAIN)
 
     -- TIME
     ui.songPlayTime = lv_label_create(ui.container)
     lv_label_set_text(ui.songPlayTime, "00:00 / 00:00")
     lv_obj_align(ui.songPlayTime, LV.ALIGN_BOTTOM_LEFT, 15, -85)
+    lv_obj_set_style_text_color(ui.songPlayTime, 0x808080, LV.PART_MAIN)
 
     -- PANEL  
     ui.panel = lv_obj_create(ui.container)
