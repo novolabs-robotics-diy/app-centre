@@ -22,7 +22,6 @@ function on_init()
 
     audio_start()
     audio_load_playlist()
-    audio_build_playlist("/music")
     audio_set_volume(21)
 
     ui.img = lv_img_create(ui.container)
