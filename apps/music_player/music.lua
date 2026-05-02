@@ -71,6 +71,7 @@ local function updateCover()
     state.currentCover = path
 
     os_log("[music] cover swap -> " .. path)
+    os_log("[music] cover raw: " .. tostring(cover))
 
     -- Small delay trick: avoids race with audio thread
     lv_timer_create(function()
