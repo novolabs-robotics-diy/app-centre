@@ -27,7 +27,7 @@ function on_init()
 
     ui.img = lv_img_create(ui.container)
     lv_img_set_src_sd(ui.img, "")
-    lv_img_set_src_sd(ui.img, "/apps/music_player/default.png")
+    lv_img_set_src_sd(ui.img, "/music/covers/default.png")
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
 
     ui.songLabel = lv_label_create(ui.container)
