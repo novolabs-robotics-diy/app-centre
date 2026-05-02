@@ -5,8 +5,8 @@ local screen = lv_scr_act()
 ui = {}
 state = {
     currentSong = nil,
+    currentCover = nil
 }
-
 -- ================= UTILS =================
 local function normalize(path)
     if not path then return nil end
@@ -63,23 +63,20 @@ local function updateTime()
 end
 
 local function updateCover()
-    local song = audio_get_current()
-    if not song then return end
-    if song == state.currentSong then return end
+    local cover = audio_get_cover()
+    local path = normalize(cover) or "/music/covers/default.png"
 
-    state.currentSong = song
-
-    local cover = normalize(audio_get_cover())
-    local path = cover or "/music/covers/default.png"
+    -- IMPORTANT: don't reload same image
+    if state.currentCover == path then return end
+    state.currentCover = path
 
     os_log("[music] cover swap -> " .. path)
 
-    -- Just swap the src. The fixed imgBox container clips to 200x200
-    -- regardless of what lv_obj_refresh_self_size does to ui.img.
-    lv_obj_set_style_bg_color(ui.img, 0xFF0000, LV.PART_MAIN)
-    lv_img_set_src_sd(ui.img, path)
-    -- Center inside the box after src swap (safe — only repositions within box)
-    lv_obj_center(ui.img)
+    -- Small delay trick: avoids race with audio thread
+    lv_timer_create(function()
+        lv_img_set_src_sd(ui.img, path)
+        lv_obj_center(ui.img)
+    end, 10, nil)
 end
 
 -- ================= INIT =================
