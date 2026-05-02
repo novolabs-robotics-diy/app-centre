@@ -63,7 +63,7 @@ function on_init()
         lv_obj_set_style_bg_color(b, 0x202020, LV_PART_MAIN)
         lv_obj_set_style_radius(b, 100, LV_PART_MAIN)
 
-        local l = lv_label_create(btn)
+        local l = lv_label_create(b)
         lv_label_set_text(l, txt)
         lv_obj_center(l)
         return b
