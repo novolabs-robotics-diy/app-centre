@@ -26,8 +26,9 @@ function on_init()
     audio_set_volume(21)
 
     ui.img = lv_img_create(ui.container)
+    lv_img_set_src_sd(ui.img, nil)
+    lv_img_set_src_sd(ui.img, cover)
     lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
-    lv_img_set_src_sd(ui.img, "/music/covers/default.png")
 
     ui.songLabel = lv_label_create(ui.container)
     lv_label_set_text(ui.songLabel, "Loading...")
@@ -126,8 +127,11 @@ function on_tick()
 
     if t and t.cover and state.currentCover ~= t.cover then
         state.currentCover = t.cover
+        os_log("[music] loading cover -> " .. tostring(cover))
+        lv_img_set_src_sd(ui.img, nil)
         lv_img_set_src_sd(ui.img, t.cover)
         lv_obj_align(ui.img, LV.ALIGN_BOTTOM_MID, 0, -155)
+        Serial.println("[IMG DEBUG] " + String(imgPathStore));
     end
 end
 
