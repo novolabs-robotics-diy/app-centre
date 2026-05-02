@@ -80,6 +80,7 @@ local function updateCover()
     -- Re-apply the size every time after swapping src.
     lv_obj_set_size(ui.img, 200, 200)
     lv_obj_align(ui.img, LV.ALIGN_TOP_MID, 0, 40)
+    lv_obj_set_style_bg_color(ui.img, 0xFF0000, LV.PART_MAIN)  -- red debug bg
 
     os_log("[music] heap after cover: " .. tostring(os_free_heap()))
 end
@@ -157,7 +158,7 @@ function on_init()
     audio_start()
     audio_build_playlist("/music")
     audio_set_volume(18)
-    audio_play()
+    -- audio_play()
 
     return true
 end
